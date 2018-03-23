@@ -7,22 +7,24 @@
 # This file defines the discriminator models.
 ###############################################################################
 
-from keras.models import Sequential
-from keras.layers import Conv2D, BatchNormalization, Activation
+from keras.models import Model
+from keras.layers import Input, Concatenate, Conv2D, BatchNormalization, Activation
 from keras.layers import LeakyReLU
 
 def model_discriminator_pixel():
 
-    model = Sequential()
-    model.add(Conv2D(64, (1, 1), strides = (1, 1), padding = 'same', input_shape = (256, 256, 6)))
-    model.add(LeakyReLU(0.2))
-    model.add(Conv2D(128, (1, 1), strides = (1, 1), padding = 'same'))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(0.2))
-    model.add(Conv2D(1, (1, 1), strides = (1, 1), padding = 'same'))
-    model.add(Activation('sigmoid'))
+    layer_i0 = Input(shape=(256, 256, 3))
+    layer_i1 = Input(shape=(256, 256, 3))
+    layer_i = Concatenate(axis = -1)([layer_i0, layer_i1])
+    layer_h = Conv2D(64, (1, 1), strides = (1, 1), padding = 'same')(layer_i)
+    layer_h = LeakyReLU(alpha = 0.2)(layer_h)
+    layer_h = Conv2D(128, (1, 1), strides = (1, 1), padding = 'same')(layer_h)
+    layer_h = BatchNormalization()(layer_h)
+    layer_h = LeakyReLU(alpha = 0.2)(layer_h)
+    layer_o = Conv2D(1, (1, 1), strides = (1, 1), padding = 'same')(layer_h)
+    layer_o = Activation('sigmoid')(layer_o)
 
-    return model    
+    return Model(inputs=[layer_i0, layer_i1], outputs=[layer_o])
 
 def model_discriminator(num_layers):
 
@@ -30,19 +32,22 @@ def model_discriminator(num_layers):
     if num_layers == 0:
         return model_discriminator_pixel()
 
-    model = Sequential()
-    model.add(Conv2D(64, (4, 4), strides = (2, 2), padding = 'same', input_shape = (256, 256, 6)))
-    model.add(LeakyReLU(0.2))
+    layer_i0 = Input(shape=(256, 256, 3))
+    layer_i1 = Input(shape=(256, 256, 3))
+    layer_i = Concatenate(axis = -1)([layer_i0, layer_i1])
+
+    layer_h = Conv2D(64, (4, 4), strides = (2, 2), padding = 'same')(layer_i)
+    layer_h = LeakyReLU(alpha = 0.2)(layer_h)
 
     for n in range(1, num_layers):
-        model.add(Conv2D(64 * min(2**n, 8), (4, 4), strides = (2, 2), padding = 'same'))
-        model.add(BatchNormalization())
-        model.add(LeakyReLU(0.2))
+        layer_h = Conv2D(64 * min(2**n, 8), (4, 4), strides = (2, 2), padding = 'same')(layer_h)
+        layer_h = BatchNormalization()(layer_h)
+        layer_h = LeakyReLU(alpha = 0.2)(layer_h)
 
-    model.add(Conv2D(64 * min(2**num_layers, 8), (4, 4), strides = (1, 1), padding = 'same'))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(0.2))
-    model.add(Conv2D(1, (4, 4), strides = (1, 1), padding = 'same'))
-    model.add(Activation('sigmoid'))
+    layer_h = Conv2D(64 * min(2**num_layers, 8), (4, 4), strides = (1, 1), padding = 'same')(layer_h)
+    layer_h = BatchNormalization()(layer_h)
+    layer_h = LeakyReLU(alpha = 0.2)(layer_h)
+    layer_o = Conv2D(1, (4, 4), strides = (1, 1), padding = 'same')(layer_h)
+    layer_o = Activation('sigmoid')(layer_o)
 
-    return model
+    return Model(inputs=[layer_i0, layer_i1], outputs=[layer_o])
