@@ -21,9 +21,9 @@ params = {
     '_comment': '',
     'input_color': True,
     'input_height': 256,
-    'input_normalize': True,
+    'input_normalize': 1,
     'input_width': 256,
-    'path_generator': './logs/2018-XX-YY_HH-MM-SS/generator.h5',
+    'path_generator': './logs/2018-MM-DD_hh-mm-ss/generator.h5',
     'pathpattern_img': '/home/XX/FlyingThings3D/frames_cleanpass_webp/TEST/**/left/*.webp',
     'pathpattern_dsp': '/home/XX/FlyingThings3D/disparity/TEST/**/left/*.pfm',
 }

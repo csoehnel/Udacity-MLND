@@ -21,13 +21,14 @@ from vislog import *
 
 ### Params ###
 params = {
-    '_comment': '',
+    '_comment': 'queue TEST',
     'batchqueuesize': 1024,
     'batchsize': 64,
     'epochs': 100,
+    'httploggerurl': 'http://node:3000',
     'input_color': True,
     'input_height': 256,
-    'input_normalize': True,
+    'input_normalize': 1, # 0 = none, 1 = normalization, 2 = standardization
     'input_width': 256,
     'logdir': './logs',
     'd_beta1': 0.5,
@@ -48,10 +49,10 @@ os.environ['KERAS_BACKEND'] = 'tensorflow'
 K.set_learning_phase(1)
 
 # Generator model
-modelG = model_generator_UNet()
+modelG = model_generator_UNet(params)
 
 # Discriminator model
-modelD = model_discriminator(3)
+modelD = model_discriminator(3, params)
 
 # Initialize logging
 [tb, mcD, mcG, outFolder] = initLogging(params, modelD, modelG)
@@ -127,15 +128,15 @@ print("done after {:4.2f}s. {:d} training samples and {:d} validation samples re
       format(time.time() - t_data_start, num_train, num_valid))
 
 # Generator for training minibatches
-train_batch = miniBatch_gf(train_paths, params['batchsize'], params['input_color'], params['input_width'],
-                           params['input_height'], params['input_normalize'])
+#train_batch = miniBatch_gf(train_paths, params['batchsize'], params['input_color'], params['input_width'],
+#                           params['input_height'], params['input_normalize'])
 
-# Generator for training minibatches (prefetching, multi-threaded) !!! HAS BUGS !!!
-#print("Initializing training batch queue for {:d} samples...".format(params['batchqueuesize']), end = " ", flush = True)
-#tbq = MiniBatchQueue(params['batchqueuesize'], train_paths, params['input_color'], params['input_width'],
-#                     params['input_height'], params['input_normalize'])
-#train_batch = miniBatchFromQueue_gf(tbq, params['batchsize'], num_train)
-#print("done.")
+# Generator for training minibatches (queued, multi-threaded)
+print("Initializing training batch queue for {:d} samples...".format(params['batchqueuesize']), end = " ", flush = True)
+tbq = MiniBatchQueue(params['batchqueuesize'], train_paths, params['input_color'], params['input_width'],
+                     params['input_height'], params['input_normalize'])
+train_batch = miniBatchFromQueue_gf(tbq, params['batchsize'], num_train)
+print("done.")
 
 # Preloading validation dataset
 print("Fetching validation data...", end = " ")
@@ -154,7 +155,7 @@ batches = np.floor(np.float32(num_train) / np.float32(params['batchsize']))
 # Start time of training / first minibatch
 t_training_start = t_batch_start = time.time()
 
-while nepoch < params['epochs']:
+while True:
 
     # Start time of minibatch
     t_batch_start = time.time()
@@ -199,3 +200,7 @@ while nepoch < params['epochs']:
 
         # Set to training mode
         K.set_learning_phase(1)
+
+    # End training?
+    if nepoch >= (params['epochs'] - 1) and (nbatch >= batches - 1):
+        break

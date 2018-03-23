@@ -4,7 +4,7 @@
 # Christoph Soehnel
 # March 16th, 2018
 #
-# This file contains functions for serving data.
+# This file contains functions logging the training process.
 ###############################################################################
 
 import os
@@ -89,15 +89,18 @@ def logEval(tb, mcD, mcG, nepoch, epochs, dt_eval, num_valid, epe):
     print("Epoch [{:4d}/{:4d}]: Evaluation on {:d} validation samples in {:8.2f}s ==>> EPE = {:9.5f}"
           .format(int(nepoch + 1), int(epochs), int(num_valid), dt_eval, epe))
 
+# Saves sample image consisting of 3 vertically stacked subimages:
+# 1) original image, 2) true disparity image, 3) generated disparity image
 def saveSampleImage(nepoch, nbatch, valid_paths, outImgFolder, color , width, height, normalize, fn_runG):
     [valid_img, valid_dsp] = loadImageSet(valid_paths, 0, 1, color, width, height, normalize)
     tmp = np.concatenate([fn_runG([valid_img[i:i + 1]])[0] for i in range(valid_img.shape[0])], axis = 0)[0]
     tmp = (((tmp - np.min(tmp)) / (np.max(tmp) - np.min(tmp))) * 255).astype(np.uint8)
     img = (((valid_img[0] - np.min(valid_img[0])) / (np.max(valid_img[0]) - np.min(valid_img[0]))) * 255).astype(np.uint8)
     dsp = (((valid_dsp[0] - np.min(valid_dsp[0])) / (np.max(valid_dsp[0]) - np.min(valid_dsp[0]))) * 255).astype(np.uint8)
-    Image.fromarray(np.vstack((img, dsp, tmp))).save(os.path.join(outImgFolder, "epoch{:04d}-batch{:04d}.jpg"
-                                                                  .format(nepoch + 1, nbatch + 1)))
+    Image.fromarray(np.vstack((np.squeeze(img), np.squeeze(dsp), np.squeeze(tmp))))\
+        .save(os.path.join(outImgFolder, "epoch{:04d}-batch{:04d}.jpg".format(nepoch + 1, nbatch + 1)))
 
+# Logging class, used to simultaneously print to stdout and to a logfile
 class Logger:
 
     def __init__(self, stream, logfile):
@@ -113,8 +116,10 @@ class Logger:
     def flush(self):
         pass
 
+# Logging class, used to send the current training status to a remote node.js tracker
 class HTTPLogger:
 
+    loggerurl = ""
     id = ""
     job = {}
 
@@ -133,10 +138,11 @@ class HTTPLogger:
         job['lossL1'] = 0.0
         job['EPE'] = 0.0
         job['comment'] = repr(params)
-        url = "http://127.0.0.1:3000/add"
-        res = requests.post(url, data = job)
+        self.loggerurl = params['httploggerurl']
+        url = self.loggerurl + "/add"
+        res = requests.post(url, headers={'Content-Type': 'application/json'}, data=json.dumps(self.job))
         if (res.ok):
-            id = res.json()['id']
+            self.id = res.json()['_id']
             self.job = job
 
     def update(self, nepoch, nbatch, batches, dt_batch, t, rt, lossD, lossG, lossL1):
@@ -150,11 +156,13 @@ class HTTPLogger:
             self.job['lossD'] = lossD
             self.job['lossG'] = lossG
             self.job['lossL1'] = lossL1
-            url = "http://127.0.0.1:3000/update"
-            requests.put(url, data = {'id': self.id, 'job': self.job})
+            url = self.loggerurl + "/update"
+            requests.put(url, headers = {'Content-Type': 'application/json'},
+                         data = json.dumps({'id': self.id, 'job': self.job}))
 
-    def update(self, epe):
+    def updateEPE(self, epe):
         if len(self.job) > 0:
             self.job['EPE'] = epe
-            url = "http://127.0.0.1:3000/update"
-            requests.put(url, data = {'id': self.id, 'job': self.job})
+            url = self.loggerurl + "/update"
+            requests.put(url, headers = {'Content-Type': 'application/json'},
+                         data = json.dumps({'id': self.id, 'job': self.job}))
