@@ -1,3 +1,12 @@
+###############################################################################
+# Udacity Machine Learning Nanodegree
+# Capstone Project
+# Christoph Soehnel
+# March 16th, 2018
+#
+# This file contains functions for serving data.
+###############################################################################
+
 import sys
 import cv2
 import glob
@@ -9,28 +18,7 @@ from collections import deque
 from PIL import Image
 from python_pfm import *
 
-####################### DEBUG #######################
-from random import randint
-
-loadSize = 286
-imageSize = 256
-
-def read_image(fn):
-    im = Image.open(fn)
-    im = im.resize( (loadSize*2, loadSize), Image.BILINEAR )
-    arr = np.array(im)/255*2-1
-    w1,w2 = (loadSize-imageSize)//2,(loadSize+imageSize)//2
-    h1,h2 = w1,w2
-    imgA = arr[h1:h2, loadSize+w1:loadSize+w2, :]
-    imgB = arr[h1:h2, w1:w2, :]
-    if randint(0,1):
-        imgA=imgA[:,::-1]
-        imgB=imgB[:,::-1]
-    return imgA, imgB
-
-######################################################
-
-def loadSample(img_path, dsp_path, color = False, width = 0, height = 0):
+def loadSample(img_path, dsp_path, color = False, width = 0, height = 0, normalize = False):
 
     sample_img = cv2.imread(img_path)
     [sample_dsp, scale] = readPFM(dsp_path)
@@ -44,33 +32,22 @@ def loadSample(img_path, dsp_path, color = False, width = 0, height = 0):
 
     # Resizing
     if width >= 1 and height >= 1:
-        sample_img = cv2.resize(sample_img, (width, height), interpolation = cv2.INTER_AREA).astype('float32') # INTER_AREA best for shrinkage
-        sample_dsp = cv2.resize(sample_dsp, (width, height), interpolation = cv2.INTER_AREA).astype('float32') # INTER_AREA best for shrinkage
+        # INTER_AREA best for shrinkage
+        sample_img = cv2.resize(sample_img, (width, height), interpolation = cv2.INTER_AREA).astype('float32')
+        sample_dsp = cv2.resize(sample_dsp, (width, height), interpolation = cv2.INTER_AREA).astype('float32')
     else:
          sample_img = sample_img.astype('float32')
          sample_dsp = sample_dsp.astype('float32')
 
+    # Normalize
+    if normalize:
+        sample_img = (sample_img - np.min(sample_img)) / (np.max(sample_img) - np.min(sample_img))
+        sample_dsp = (sample_dsp - np.min(sample_dsp)) / (np.max(sample_dsp) - np.min(sample_dsp))
+    else: # Standardize
+        sample_img = (sample_img - np.mean(sample_img)) / np.std(sample_img)
+        sample_dsp = (sample_dsp - np.mean(sample_dsp)) / np.std(sample_dsp)
+
     return [sample_img, sample_dsp]
-
-def showSampleImage1(img_path, dsp_path, img_path_out, dsp_path_out):
-
-    img = Image.open(img_path).convert("RGB")
-    img.show()
-    img.save(img_path_out)
-
-    [data, scale] = readPFM(dsp_path)
-    data = (data * 255 / np.max(data)).astype('uint8') # only for saving to jpg
-    disparity_image = Image.fromarray(data)
-    disparity_image.show()
-    disparity_image.save(dsp_path_out)
-
-def showSampleImage2(img_path, dsp_path):
-
-    [sample_img, sample_dsp] = loadSample(img_path, dsp_path, True)
-    sample_img = (sample_img * 255 / np.max(sample_img)).astype('uint8')
-    sample_dsp = (sample_dsp * 255 / np.max(sample_dsp)).astype('uint8')
-    Image.fromarray(sample_img).show()
-    Image.fromarray(sample_dsp).show()
 
 def loadFilePaths(img_path_pattern, dsp_path_pattern, randomize = False):
 
@@ -102,7 +79,18 @@ def loadFilePaths(img_path_pattern, dsp_path_pattern, randomize = False):
 
     return [cmb_paths, len(cmb_paths)] # return list with consistent file paths
 
-def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0):
+def loadImageSet(paths, i, num2load, color, width, height, normalize):
+
+    img = []
+    dsp = []
+    num2load = min(i + num2load, len(paths))
+    for j in range(i, i + num2load):
+        [sample_img, sample_dsp] = loadSample(paths[j][0], paths[j][1], color, width, height, normalize)
+        img.append(sample_img)
+        dsp.append(sample_dsp)
+    return [np.float32(img), np.float32(dsp)]
+
+def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0, normalize = True):
 
     i = 0
     epoch = 0
@@ -111,7 +99,7 @@ def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0):
 
     while True:
 
-    # Start again with next epoch, if all data has been used
+        # Start again with next epoch, if all data has been used
         if (i + batchsize) > numTrain:
             random.shuffle(train_paths)
             epoch += 1
@@ -122,8 +110,7 @@ def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0):
         minibatch_img = []
         minibatch_dsp = []
         for j in range(i, i + batchsize):
-            #[sample_img, sample_dsp] = loadSample(train_paths[j][0], train_paths[j][1], color, width, height)
-            [sample_img, sample_dsp] = read_image(train_paths[j][0])
+            [sample_img, sample_dsp] = loadSample(train_paths[j][0], train_paths[j][1], color, width, height, normalize)
             minibatch_img.append(sample_img)
             minibatch_dsp.append(sample_dsp)
 
@@ -131,6 +118,8 @@ def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0):
 
         i += batchsize
         batch += 1
+
+import copy
 
 def miniBatchFromQueue_gf(batchqueue, batchsize, numTrain):
 
@@ -140,7 +129,7 @@ def miniBatchFromQueue_gf(batchqueue, batchsize, numTrain):
 
     while True:
 
-    # Start again with next epoch, if all data has been used
+        # Start again with next epoch, if all data has been used
         if (i + batchsize) > numTrain:
             epoch += 1
             batch = 0
@@ -149,9 +138,10 @@ def miniBatchFromQueue_gf(batchqueue, batchsize, numTrain):
         # Generate next minibatch
         minibatch_img = []
         minibatch_dsp = []
-        for j in range(i, i + batchsize):
-            while batchqueue.getNumSamples() < 1:
-                print(">>> Batch queue empty, waiting 1s. <<<")
+        #for j in range(i, i + batchsize):
+        for j in range(batchsize):
+            while batchqueue.getNumSamples() < batchsize:
+                print(">>> Caching batch queue, waiting 1s... <<<")
                 time.sleep(1)
             [sample_img, sample_dsp] = batchqueue.getNextSample()
             minibatch_img.append(sample_img)
@@ -164,29 +154,31 @@ def miniBatchFromQueue_gf(batchqueue, batchsize, numTrain):
 
 class MiniBatchQueue(threading.Thread):
 
-    def __init__(self, memlimit, paths, color, width, height):
+    def __init__(self, qlimit, paths, color, width, height, normalize):
         threading.Thread.__init__(self)
         self.q = deque()
-        self.memlimit = memlimit
+        self.qlimit = qlimit
         self.paths = paths
         self.color = color
         self.width = width
         self.height = height
+        self.normalize = normalize
         self.setDaemon(True)
         self.start()
 
     def run(self):
+        i = 0
         while True:
-            i = 0
-            while sys.getsizeof(self.q) < self.memlimit:
+            while self.getNumSamples() < self.qlimit:
                 if i >= len(self.paths):
-                    random.shuffle(self.paths)
                     i = 0
-                self.q.append(loadSample(self.paths[i][0], self.paths[i][1], self.color, self.width, self.height))
+                    random.shuffle(self.paths)
+                self.q.append(copy.deepcopy(loadSample(self.paths[i][0], self.paths[i][1], self.color, self.width,
+                                                       self.height, self.normalize)))
                 i += 1
 
     def getNumSamples(self):
         return len(self.q)
 
     def getNextSample(self):
-        return self.q.popleft()
+        return copy.deepcopy(self.q.popleft())
