@@ -1,0 +1,14 @@
+./DogBreedTestImages/BorderCollie.jpg
+./DogBreedTestImages/Car.jpg
+./DogBreedTestImages/Cat.jpg
+./DogBreedTestImages/Chicken.jpg
+./DogBreedTestImages/DeutscherSchaeferhund.jpg
+./DogBreedTestImages/Gandalf.jpg
+./DogBreedTestImages/MeDiving.jpg
+./DogBreedTestImages/Me.jpg
+./DogBreedTestImages/Merkel.jpg
+./DogBreedTestImages/Mischling.jpg
+./DogBreedTestImages/Monkey.jpg
+./DogBreedTestImages/Mops.jpg
+./DogBreedTestImages/ParsonRussel.jpg
+./DogBreedTestImages/Pudel.jpg
