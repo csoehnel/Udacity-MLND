@@ -5,6 +5,10 @@
 # March 16th, 2018
 #
 # This is the main file for training.
+# Implementation inspired by:
+# https://github.com/tdeboissiere/DeepLearningImplementations/tree/master/pix2pix
+# https://github.com/tjwei/GANotebooks/blob/master/pix2pix-keras.ipynb
+# https://github.com/phillipi/pix2pix
 ###############################################################################
 
 import os
@@ -21,7 +25,7 @@ from vislog import *
 
 ### Params ###
 params = {
-    '_comment': 'queue TEST',
+    '_comment': '',
     'batchqueuesize': 1024,
     'batchsize': 64,
     'epochs': 100,
@@ -42,6 +46,9 @@ params = {
 
 # Configure KERAS to use TENSORFLOW as backend
 os.environ['KERAS_BACKEND'] = 'tensorflow'
+
+# Set GPU to use (0 = first)
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 ### Setup models ###
 

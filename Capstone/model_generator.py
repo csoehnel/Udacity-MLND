@@ -4,7 +4,11 @@
 # Christoph Soehnel
 # March 16th, 2018
 #
-# This file defines the generator model as U-Net.
+# This file defines the generator model as a U-Net.
+# Implementation inspired by:
+# https://github.com/tdeboissiere/DeepLearningImplementations/tree/master/pix2pix
+# https://github.com/tjwei/GANotebooks/blob/master/pix2pix-keras.ipynb
+# https://github.com/phillipi/pix2pix
 ###############################################################################
 
 from keras.models import Model
