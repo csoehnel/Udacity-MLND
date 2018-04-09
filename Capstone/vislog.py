@@ -91,8 +91,9 @@ def logEval(tb, mcD, mcG, nepoch, epochs, dt_eval, num_valid, epe):
 
 # Saves sample image consisting of 3 vertically stacked subimages:
 # 1) original image, 2) true disparity image, 3) generated disparity image
-def saveSampleImage(nepoch, nbatch, valid_paths, outImgFolder, color , width, height, normalize, fn_runG):
-    [valid_img, valid_dsp] = loadImageSet(valid_paths, 0, 1, color, width, height, normalize)
+# Scaling to 8-Bit RGB values instead of original scaling for visualization.
+def saveSampleImage(nepoch, nbatch, valid_paths, outImgFolder, params, fn_runG):
+    [valid_img, valid_dsp] = loadImageSet(valid_paths, 0, 1, params)
     tmp = np.concatenate([fn_runG([valid_img[i:i + 1]])[0] for i in range(valid_img.shape[0])], axis = 0)[0]
     tmp = (((tmp - np.min(tmp)) / (np.max(tmp) - np.min(tmp))) * 255).astype(np.uint8)
     img = (((valid_img[0] - np.min(valid_img[0])) / (np.max(valid_img[0]) - np.min(valid_img[0]))) * 255).astype(np.uint8)

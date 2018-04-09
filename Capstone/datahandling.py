@@ -11,6 +11,7 @@ import sys
 import cv2
 import glob
 import time
+import copy
 import random
 import threading
 import numpy as np
@@ -18,41 +19,48 @@ from collections import deque
 from PIL import Image
 from python_pfm import *
 
-def loadSample(img_path, dsp_path, color = False, width = 0, height = 0, normalize = 0):
+def loadSample(img_path, dsp_path, params):
 
     sample_img = cv2.imread(img_path)
     [sample_dsp, scale] = readPFM(dsp_path)
 
     # Color or Grey-Scale
-    if color:
+    if params['input_color']:
         sample_img = cv2.cvtColor(sample_img, cv2.COLOR_RGBA2RGB)
         sample_dsp = np.dstack([sample_dsp] * 3)
     else:
         sample_img = cv2.cvtColor(sample_img, cv2.COLOR_RGBA2GRAY)
 
     # Resizing
-    if width >= 1 and height >= 1:
+    if params['input_width'] >= 1 and params['input_height'] >= 1:
         # INTER_AREA best for shrinkage
-        sample_img = cv2.resize(sample_img, (width, height), interpolation = cv2.INTER_AREA).astype('float32')
-        sample_dsp = cv2.resize(sample_dsp, (width, height), interpolation = cv2.INTER_AREA).astype('float32')
+        sample_img = cv2.resize(sample_img, (params['input_width'], params['input_height']),
+                                interpolation = cv2.INTER_AREA).astype('float32')
+        sample_dsp = cv2.resize(sample_dsp, (params['input_width'], params['input_height']),
+                                interpolation = cv2.INTER_AREA).astype('float32')
 
-        if not color:
+        if not params['input_color']:
             sample_img = sample_img[:, :, np.newaxis]
             sample_dsp = sample_dsp[:, :, np.newaxis]
     else:
         sample_img = sample_img.astype('float32')
         sample_dsp = sample_dsp.astype('float32')
 
-        if not color:
+        if not params['input_color']:
             sample_img = sample_img[:, :, np.newaxis]
             sample_dsp = sample_dsp[:, :, np.newaxis]
 
-    if normalize == 1: # Normalize
+    if params['input_normalize'] == 1: # Normalize
         sample_img = (sample_img - np.min(sample_img)) / (np.max(sample_img) - np.min(sample_img))
         sample_dsp = (sample_dsp - np.min(sample_dsp)) / (np.max(sample_dsp) - np.min(sample_dsp))
-    elif normalize == 2: # Standardize
+    elif params['input_normalize'] == 2: # Standardize
         sample_img = (sample_img - np.mean(sample_img)) / np.std(sample_img)
         sample_dsp = (sample_dsp - np.mean(sample_dsp)) / np.std(sample_dsp)
+    elif params['input_normalize'] == 3: # Global normalization
+        sample_img = (sample_img - params['glob_norm_img_min']) / (params['glob_norm_img_max'] -
+                                                                   params['glob_norm_img_min'])
+        sample_dsp = (sample_dsp - params['glob_norm_dsp_min']) / (params['glob_norm_dsp_max'] -
+                                                                   params['glob_norm_dsp_min'])
 
     return [sample_img, sample_dsp]
 
@@ -86,18 +94,50 @@ def loadFilePaths(img_path_pattern, dsp_path_pattern, randomize = False):
 
     return [cmb_paths, len(cmb_paths)] # return list with consistent file paths
 
-def loadImageSet(paths, i, num2load, color, width, height, normalize):
+def loadImageSet(paths, i, num2load, params):
 
     img = []
     dsp = []
     num2load = min(i + num2load, len(paths))
     for j in range(i, i + num2load):
-        [sample_img, sample_dsp] = loadSample(paths[j][0], paths[j][1], color, width, height, normalize)
+        [sample_img, sample_dsp] = loadSample(paths[j][0], paths[j][1], params)
         img.append(sample_img)
         dsp.append(sample_dsp)
     return [np.float32(img), np.float32(dsp)]
 
-def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0, normalize = 1):
+def getDatasetMinMax(paths, color):
+
+    _params = {
+        'glob_norm_dsp_min': np.inf,
+        'glob_norm_dsp_max': 0,
+        'glob_norm_img_min': np.inf,
+        'glob_norm_img_max': 0
+    }
+    tparams = {
+        'input_normalize': 0,
+        'input_height': 0,
+        'input_width': 0,
+        'input_color': color
+    }
+    _paths = list(paths)
+
+    for i in range(len(paths)):
+
+        [sample_img, sample_dsp] = loadSample(paths[i][0], paths[i][1], tparams)
+
+        # Only consider non-outliers
+        if np.min(sample_dsp) >= 0 and np.max(sample_dsp) <= sample_img.shape[1]:
+            _params['glob_norm_dsp_min'] = min(_params['glob_norm_dsp_min'], np.min(sample_dsp))
+            _params['glob_norm_dsp_max'] = max(_params['glob_norm_dsp_max'], np.max(sample_dsp))
+            _params['glob_norm_img_min'] = min(_params['glob_norm_img_min'], np.min(sample_img))
+            _params['glob_norm_img_max'] = max(_params['glob_norm_img_max'], np.max(sample_img))
+        else:
+            # Remove outliers
+            del _paths[i]
+
+    return [_paths, _params]
+
+def miniBatch_gf(train_paths, params):
 
     i = 0
     epoch = 0
@@ -107,7 +147,7 @@ def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0, n
     while True:
 
         # Start again with next epoch, if all data has been used
-        if (i + batchsize) > numTrain:
+        if (i + params['batchsize']) > numTrain:
             random.shuffle(train_paths)
             epoch += 1
             batch = 0
@@ -116,17 +156,15 @@ def miniBatch_gf(train_paths, batchsize, color = False, width = 0, height = 0, n
         # Generate next minibatch
         minibatch_img = []
         minibatch_dsp = []
-        for j in range(i, i + batchsize):
-            [sample_img, sample_dsp] = loadSample(train_paths[j][0], train_paths[j][1], color, width, height, normalize)
+        for j in range(i, i + params['batchsize']):
+            [sample_img, sample_dsp] = loadSample(train_paths[j][0], train_paths[j][1], params)
             minibatch_img.append(sample_img)
             minibatch_dsp.append(sample_dsp)
 
         yield [epoch, batch, np.float32(minibatch_img), np.float32(minibatch_dsp)]
 
-        i += batchsize
+        i += params['batchsize']
         batch += 1
-
-import copy
 
 def miniBatchFromQueue_gf(batchqueue, batchsize, numTrain):
 
@@ -160,27 +198,22 @@ def miniBatchFromQueue_gf(batchqueue, batchsize, numTrain):
 
 class MiniBatchQueue(threading.Thread):
 
-    def __init__(self, qlimit, paths, color, width, height, normalize):
+    def __init__(self, paths, params):
         threading.Thread.__init__(self)
         self.q = deque()
-        self.qlimit = qlimit
+        self.params = params
         self.paths = paths
-        self.color = color
-        self.width = width
-        self.height = height
-        self.normalize = normalize
         self.setDaemon(True)
         self.start()
 
     def run(self):
         i = 0
         while True:
-            while self.getNumSamples() < self.qlimit:
+            while self.getNumSamples() < self.params['batchqueuesize']:
                 if i >= len(self.paths):
                     i = 0
                     random.shuffle(self.paths)
-                self.q.append(copy.deepcopy(loadSample(self.paths[i][0], self.paths[i][1], self.color, self.width,
-                                                       self.height, self.normalize)))
+                self.q.append(copy.deepcopy(loadSample(self.paths[i][0], self.paths[i][1], self.params)))
                 i += 1
 
     def getNumSamples(self):
