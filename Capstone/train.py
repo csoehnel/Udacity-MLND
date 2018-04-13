@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# March 16th, 2018
+# April 12th, 2018
 #
 # This is the main file for training.
 # Implementation inspired by:
@@ -27,18 +27,18 @@ from vislog import *
 params = {
     '_comment': '',
     'batchqueuesize': 1024,
-    'batchsize': 64,
-    'epochs': 100,
+    'batchsize': 32,
+    'color': 1, # 0 = img/dsp monochrome, 1 = img color/dsp monochrome, 2 = img/dsp color
+    'epochs': 500,
     'httploggerurl': 'http://node:3000',
-    'input_color': True,
     'input_height': 256,
     'input_normalize': 3, # 0 = none, 1 = normalization, 2 = standardization, 3 = global normalization
     'input_width': 256,
     'logdir': './logs',
     'd_beta1': 0.5,
-    'd_lr': 1e-4,
+    'd_lr': 2e-5,
     'g_beta1': 0.5,
-    'g_lr': 1e-4,
+    'g_lr': 2e-5,
     'pathpattern_img': '/home/XX/FlyingThings3D/frames_cleanpass_webp/TRAIN/**/left/*.webp',
     'pathpattern_dsp': '/home/XX/FlyingThings3D/disparity/TRAIN/**/left/*.pfm',
     'removeOutliers': True,
@@ -128,7 +128,7 @@ print("done after {:4.2f}s. Found {:d} training samples.".format(time.time() - t
 # Determine min and max for global data normalization and outlier outlier removal
 if params['input_normalize'] == 3 or params['removeOutliers']:
     print("Checking for outliers and/or global normalization boundaries...", end = " ")
-    [_paths, _params] = getDatasetMinMax(train_paths, params['input_color'])
+    [_paths, _params] = getDatasetMinMax(train_paths, params['color'])
     params.update(_params)
     if params['removeOutliers']:
         train_paths = _paths

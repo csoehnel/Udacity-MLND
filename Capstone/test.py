@@ -19,7 +19,7 @@ from vislog import *
 ### Params ###
 params = {
     '_comment': '',
-    'input_color': True,
+    'color': True,
     'input_height': 256,
     'input_normalize': 1,
     'input_width': 256,

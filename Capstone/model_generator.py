@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# March 16th, 2018
+# April 12th, 2018
 #
 # This file defines the generator model as a U-Net.
 # Implementation inspired by:
@@ -18,8 +18,10 @@ from keras.initializers import RandomNormal
 
 def model_generator_UNet(params):
 
-    channels = 3 if params['input_color'] else 1
-    layer_i = Input(shape=(256, 256, channels))
+    channels_img = 3 if params['color'] >= 1 else 1
+    channels_dsp = 3 if params['color'] == 2 else 1
+
+    layer_i = Input(shape=(256, 256, channels_img))
 
     # Encoder
     layer_e1 = Conv2D(64, (4, 4), strides = (2, 2), padding = 'same', kernel_initializer = RandomNormal(0, 0.02))(layer_i)
@@ -91,7 +93,7 @@ def model_generator_UNet(params):
     layer_d7 = Concatenate()([layer_d7, layer_e1]) # Residual connections
 
     layer_d8 = Activation('relu')(layer_d7)
-    layer_d8 = Conv2DTranspose(channels, (4, 4), strides = (2, 2), padding = 'same', kernel_initializer = RandomNormal(0, 0.02))(layer_d8)
+    layer_d8 = Conv2DTranspose(channels_dsp, (4, 4), strides = (2, 2), padding = 'same', kernel_initializer = RandomNormal(0, 0.02))(layer_d8)
 
     layer_o = Activation('tanh')(layer_d8)
 

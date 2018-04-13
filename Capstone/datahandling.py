@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# March 16th, 2018
+# April 12th, 2018
 #
 # This file contains functions for serving data.
 ###############################################################################
@@ -25,11 +25,13 @@ def loadSample(img_path, dsp_path, params):
     [sample_dsp, scale] = readPFM(dsp_path)
 
     # Color or Grey-Scale
-    if params['input_color']:
+    if params['color'] == 0:
+        sample_img = cv2.cvtColor(sample_img, cv2.COLOR_RGBA2GRAY)
+    elif params['color'] == 1:
+        sample_img = cv2.cvtColor(sample_img, cv2.COLOR_RGBA2RGB)
+    elif params['color'] == 2:
         sample_img = cv2.cvtColor(sample_img, cv2.COLOR_RGBA2RGB)
         sample_dsp = np.dstack([sample_dsp] * 3)
-    else:
-        sample_img = cv2.cvtColor(sample_img, cv2.COLOR_RGBA2GRAY)
 
     # Resizing
     if params['input_width'] >= 1 and params['input_height'] >= 1:
@@ -38,18 +40,18 @@ def loadSample(img_path, dsp_path, params):
                                 interpolation = cv2.INTER_AREA).astype('float32')
         sample_dsp = cv2.resize(sample_dsp, (params['input_width'], params['input_height']),
                                 interpolation = cv2.INTER_AREA).astype('float32')
-
-        if not params['input_color']:
-            sample_img = sample_img[:, :, np.newaxis]
-            sample_dsp = sample_dsp[:, :, np.newaxis]
     else:
         sample_img = sample_img.astype('float32')
         sample_dsp = sample_dsp.astype('float32')
 
-        if not params['input_color']:
-            sample_img = sample_img[:, :, np.newaxis]
-            sample_dsp = sample_dsp[:, :, np.newaxis]
+    # Reshape axes
+    if params['color'] == 0:
+        sample_img = sample_img[:, :, np.newaxis]
+        sample_dsp = sample_dsp[:, :, np.newaxis]
+    elif params['color'] == 1:
+        sample_dsp = sample_dsp[:, :, np.newaxis]
 
+    # Scaling
     if params['input_normalize'] == 1: # Normalize
         sample_img = (sample_img - np.min(sample_img)) / (np.max(sample_img) - np.min(sample_img))
         sample_dsp = (sample_dsp - np.min(sample_dsp)) / (np.max(sample_dsp) - np.min(sample_dsp))
@@ -117,7 +119,7 @@ def getDatasetMinMax(paths, color):
         'input_normalize': 0,
         'input_height': 0,
         'input_width': 0,
-        'input_color': color
+        'color': color
     }
     _paths = list(paths)
 

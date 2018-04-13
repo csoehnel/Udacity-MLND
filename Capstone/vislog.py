@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# March 16th, 2018
+# April 12th, 2018
 #
 # This file contains functions logging the training process.
 ###############################################################################
@@ -98,6 +98,13 @@ def saveSampleImage(nepoch, nbatch, valid_paths, outImgFolder, params, fn_runG):
     tmp = (((tmp - np.min(tmp)) / (np.max(tmp) - np.min(tmp))) * 255).astype(np.uint8)
     img = (((valid_img[0] - np.min(valid_img[0])) / (np.max(valid_img[0]) - np.min(valid_img[0]))) * 255).astype(np.uint8)
     dsp = (((valid_dsp[0] - np.min(valid_dsp[0])) / (np.max(valid_dsp[0]) - np.min(valid_dsp[0]))) * 255).astype(np.uint8)
+    if params['color'] == 0:
+        img = np.dstack([img] * 3)
+        tmp = np.dstack([tmp] * 3)
+        dsp = np.dstack([dsp] * 3)
+    elif params['color'] == 1:
+        tmp = np.dstack([tmp] * 3)
+        dsp = np.dstack([dsp] * 3)
     Image.fromarray(np.vstack((np.squeeze(img), np.squeeze(dsp), np.squeeze(tmp))))\
         .save(os.path.join(outImgFolder, "epoch{:04d}-batch{:04d}.jpg".format(nepoch + 1, nbatch + 1)))
 
