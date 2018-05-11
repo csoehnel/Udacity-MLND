@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# April 12th, 2018
+# May 11th, 2018
 #
 # This is the main file for training.
 # Implementation inspired by:
@@ -27,9 +27,9 @@ from vislog import *
 params = {
     '_comment': '',
     'batchqueuesize': 1024,
-    'batchsize': 32,
+    'batchsize': 1,
     'color': 1, # 0 = img/dsp monochrome, 1 = img color/dsp monochrome, 2 = img/dsp color
-    'epochs': 500,
+    'epochs': 300,
     'httploggerurl': 'http://node:3000',
     'input_height': 256,
     'input_normalize': 3, # 0 = none, 1 = normalization, 2 = standardization, 3 = global normalization
@@ -60,7 +60,7 @@ K.set_learning_phase(1)
 modelG = model_generator_UNet(params)
 
 # Discriminator model
-modelD = model_discriminator(3, params)
+modelD = model_discriminator(0, params)
 
 # Initialize logging
 [tb, mcD, mcG, outFolder] = initLogging(params, modelD, modelG)

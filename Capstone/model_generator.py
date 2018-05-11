@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# April 12th, 2018
+# May 11th, 2018
 #
 # This file defines the generator model as a U-Net.
 # Implementation inspired by:

@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# April 12th, 2018
+# May 11th, 2018
 #
 # This file contains functions for serving data.
 ###############################################################################

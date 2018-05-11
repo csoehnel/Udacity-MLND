@@ -2,7 +2,7 @@
 # Udacity Machine Learning Nanodegree
 # Capstone Project
 # Christoph Soehnel
-# March 16th, 2018
+# May 11th, 2018
 #
 # This file contains the function to read/write the disparity files in PFM
 # format. It is a Python3 implementation based on this Python2 implementation:

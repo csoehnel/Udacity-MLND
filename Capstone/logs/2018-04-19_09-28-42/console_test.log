@@ -1,0 +1,4 @@
+Preparing data... done after 0.36s. Found 4370 test samples.
+Checking for outliers... done after 63.77s. Removed 6 outliers.
+Fetching test data... done after 72.30s.
+Evaluating 4364 validation samples... done after    45.02s ==>> EPE =  14.43720
