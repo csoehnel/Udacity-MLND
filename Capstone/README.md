@@ -21,7 +21,7 @@ Christoph Soehnel
 The following set-up has been used for training and testing:
 
 * NVIDIA GPU
-* 12 GB Free system RAM
+* 32 GB RAM, at least 10 GB free RAM
 
 * Ubuntu 18.04 LTS
 * Docker 17.12.1-ce + nvidia-docker2
@@ -36,10 +36,10 @@ The following set-up has been used for training and testing:
 * requests 2.18.4
 * tensorflow 1.8.0
 
-###Image data:
+### Image data
 https://lmb.informatik.uni-freiburg.de/data/SceneFlowDatasets_CVPR16/Release_april16/data/FlyingThings3D/raw_data/flyingthings3d__frames_cleanpass_webp.tar
 
-###Disparity data:
+### Disparity data
 https://lmb.informatik.uni-freiburg.de/data/SceneFlowDatasets_CVPR16/Release_april16/data/FlyingThings3D/derived_data/flyingthings3d__disparity.tar.bz2
 
 ## Installing
