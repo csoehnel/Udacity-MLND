@@ -4,77 +4,41 @@
 
 ## Files/Folders
 
-* logs/201804-19_09-28-42/console_test.log
+* **logs/201804-19_09-28-42/console_test.log**: This file contains the console output of the final model's testing output.
 
-This file contains the console output of the final model's testing output.
+* **logs/201804-19_09-28-42/discriminator.json**: This file contains the actual discriminator configuration used for the the final model.
 
-* logs/201804-19_09-28-42/discriminator.json
+* **logs/201804-19_09-28-42/discriminator.h5**: The trained discriminator model.
 
-This file contains the actual discriminator configuration used for the the final model.
+* **logs/201804-19_09-28-42/epoch0001-batch201115.jpg - epoch0305-batch20115.jpg**: These files visualize the current generator performance after every epoch. One file consists of three vertically stacked images. From top to bottom: input image, ground truth disparity map, generated disparity map after current epoch.
 
-* logs/201804-19_09-28-42/discriminator.h5
+* **logs/201804-19_09-28-42/generator.h5**: The trained generator model.
 
-The trained discriminator model.
+* **logs/201804-19_09-28-42/generator.json**: This file contains the actual generator configuration used for the final model.
 
-* logs/201804-19_09-28-42/epoch0001-batch201115.jpg - epoch0305-batch20115.jpg
+* **logs/201804-19_09-28-42/params_test.log**: The parameters used for testing the model.
 
-These files visualize the current generator performance after every epoch. One file consists of three vertically stacked images. From top to bottom: input image, ground truth disparity map, generated disparity map after current epoch.
+* **logs/201804-19_09-28-42/params_train.log**: The parameters used for training the model.
 
-* logs/201804-19_09-28-42/generator.h5
+* **proposal/proposal.pdf**: The proposal for the project as pdf document.
 
-The trained generator model.
+* **report/report.pdf**: The report for the project as pdf document.
 
-* logs/201804-19_09-28-42/generator.json
+* **datahandling.py**: This file contains all the functions for managing the datasets.
 
-This file contains the actual generator configuration used for the final model.
+* **evaluation.py**: This file contains the evaluation logic.
 
-* logs/201804-19_09-28-42/params_test.log
+* **model_discriminator.py**: This file defines the discriminator model of the GAN.
 
-The parameters used for testing the model.
+* **model_generator.py**: This file defines the generator model of the GAN as a U-Net.
 
-* logs/201804-19_09-28-42/params_train.log
+* **python_pfm.py**: This file contains the functions to read/write the disparity files in PFM format.
 
-The parameters used for training the model.
+* **test.py**: This is the main file for testing.
 
-* proposal/proposal.pdf
+* **train.py**: This is the main file for training.
 
-The proposal for the project as pdf document.
-
-* report/report.pdf
-
-The report for the project as pdf document.
-
-* datahandling.py
-
-This file contains all the functions for managing the datasets.
-
-* evaluation.py
-
-This file contains the evaluation logic.
-
-* model_discriminator.py
-
-This file defines the discriminator model of the GAN.
-
-* model_generator.py
-
-This file defines the generator model of the GAN as a U-Net.
-
-* python_pfm.py
-
-This file contains the functions to read/write the disparity files in PFM format.
-
-* test.py
-
-This is the main file for testing.
-
-* train.py
-
-This is the main file for training.
-
-* vislog.py
-
-This file contains functions for logging and visualizing the training process.
+* **vislog.py**: This file contains functions for logging and visualizing the training process.
 
 ## Prerequisites
 
